@@ -1,0 +1,15 @@
+{
+    "name": "alfacode-team/hkm-plugin-session",
+    "description": "HKM Kernel plugin providing 'session.management'.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["hkm-kernel", "plugin", "php", "session.management"],
+    "require": {
+        "php": ">=8.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "Plugins\\Session\\": ""
+        }
+    }
+}
