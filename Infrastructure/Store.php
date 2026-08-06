@@ -27,6 +27,18 @@ final class Store implements SessionPort
 
     private string $id;
     private bool $started = false;
+
+    /**
+     * True when this request seeded a CSRF token that has never been persisted.
+     *
+     * The token is seeded WITHOUT marking the session dirty, so a bot fetching
+     * one page does not create a stored session. But nothing marked it dirty
+     * later either, so the cookie was never sent and the next request minted a
+     * DIFFERENT token — the anonymous GET->POST CSRF handshake could never
+     * succeed. Persisting on first READ keeps both properties: no session for
+     * traffic that never renders a form, a stable token for traffic that does.
+     */
+    private bool $tokenNeedsPersisting = false;
     /** True once a public mutator ran — gates lazy persistence. */
     private bool $dirty = false;
     /** True when start() loaded a pre-existing session from the handler. */
@@ -67,6 +79,7 @@ final class Store implements SessionPort
         // an otherwise-unused session must not be persisted just for the token.
         if (!$this->has(self::TOKEN_KEY)) {
             $this->setRaw(self::TOKEN_KEY, bin2hex(random_bytes(20)));
+            $this->tokenNeedsPersisting = true;
         }
 
         $this->ageFlashData();
@@ -177,6 +190,16 @@ final class Store implements SessionPort
     public function token(): string
     {
         $token = $this->get(self::TOKEN_KEY);
+
+        // Reading the token means it is about to be embedded in a form or a
+        // header, so the value MUST survive to the request that submits it.
+        // Mark the session dirty now — this is the point at which the token
+        // stops being speculative.
+        if ($this->tokenNeedsPersisting && is_string($token) && $token !== '') {
+            $this->dirty                = true;
+            $this->tokenNeedsPersisting = false;
+        }
+
         return is_string($token) ? $token : '';
     }
 
