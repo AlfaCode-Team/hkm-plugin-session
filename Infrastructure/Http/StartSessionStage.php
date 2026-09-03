@@ -46,6 +46,12 @@ final class StartSessionStage implements HttpStageContract
     private const PREVIOUS_URL_EXEMPT = [
         '/auth', '/oauth', '/api', '/ajx',
         '/login', '/logout', '/register', '/password',
+        // The password-reset screens under their conventional names. '/password'
+        // above only covers a '/password/...' surface; an app that mounts the
+        // flow at '/forgot-password' (the common spelling) was recording it as a
+        // page worth returning to — so finishing a reset and signing in dropped
+        // the user straight back onto the "forgot your password?" form.
+        '/forgot-password', '/reset-password',
         '/verify-email', '/users/verify',
     ];
 
